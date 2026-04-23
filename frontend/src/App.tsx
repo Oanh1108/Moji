@@ -3,6 +3,7 @@ import SignInPage from './pages/SignInPage'
 import SignUpPage from './pages/SignUpPage'
 import ChatAppPage from './pages/ChatAppPage'
 import {Toaster} from 'sonner'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 function App() {
  
@@ -21,11 +22,14 @@ function App() {
               element={<SignUpPage/>}
             />
           {/* protectect routes */}
-          {/* todo: tạo protected route */}
           <Route 
-            path='/'
-            element={<ChatAppPage/>}
-          />
+            element={<ProtectedRoute/>}
+          >
+            <Route 
+              path='/'
+              element={<ChatAppPage/>}
+            />
+          </Route>
         </Routes>
       </BrowserRouter>
     </>

@@ -1,26 +1,41 @@
 import { useAuthStore } from '@/stores/useAuthStore'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router';
 
 const ProtectedRoute = () => {
-    const {accessToken, user, loading, refresh, fetchMe} = useAuthStore();
+    const accessToken = useAuthStore((state) => state.accessToken);
+    const loading = useAuthStore((state) => state.loading);
     const [starting, setStarting] = useState(true);
 
-    const init = async () => {
-        //có thể xảy ra khi refresh trang
-        if(!accessToken){
-            await refresh();
-        }
-
-        if(accessToken && !user) {
-            await fetchMe();
-        }
-
-        setStarting(false);
-    }
-
     useEffect(()=>{
+        let mounted = true;
+
+        const init = async () => {
+            try {
+                const auth = useAuthStore.getState();
+
+                // Có thể xảy ra khi refresh trang
+                if(!auth.accessToken){
+                    await auth.refresh();
+                }
+
+                const latestAuth = useAuthStore.getState();
+
+                if(latestAuth.accessToken && !latestAuth.user) {
+                    await latestAuth.fetchMe();
+                }
+            } finally {
+                if(mounted){
+                    setStarting(false);
+                }
+            }
+        }
+
         init();
+
+        return () => {
+            mounted = false;
+        }
     },[])
 
     if(starting || loading) {
