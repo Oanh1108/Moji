@@ -8,6 +8,9 @@ import cookieParser from 'cookie-parser'
 import userRoute from './routes/userRpute.js'
 import { protectedRoute } from './middlewares/authMiddleware.js';
 import cors from 'cors'
+import friendRoute from './routes/friendRoute.js'
+import messageRoute from './routes/messageRoute.js'
+import converesationRoute from './routes/conversationRoute.js'
 
 dotenv.config();
 
@@ -24,8 +27,10 @@ app.use("/api/auth", authRoute)
 
 //private routes
 app.use(protectedRoute)
-app.use("/api/users", userRoute)
-
+app.use("/api/users", userRoute);
+app.use("/api/friends", friendRoute);
+app.use("/api/messages", messageRoute);
+app.use("/api/conversations", converesationRoute);
 
 
 connectDB().then(()=>{
