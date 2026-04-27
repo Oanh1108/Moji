@@ -2,8 +2,11 @@ import {create} from 'zustand'
 import {toast} from 'sonner'
 import { authService } from '@/services/authService'
 import type { AuthState } from '@/types/store'
+import { persist } from 'zustand/middleware'
+import { useChatStore } from './useChatStore'
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>()(
+    persist((set, get) => ({
     accessToken: null,
     user: null,
     loading: false,
@@ -13,10 +16,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     clearState: () => {
-        set({accessToken: null, user: null, loading: false})
-    },  //Mục đích của hàm này là tái sử dụng nhiều lần
+        //Mục đích của hàm này là tái sử dụng nhiều lần
     //VD: sau khi logout hoặc token hết hạn, chỉ cần gọi clear token là 
     //toàn bộ thông tin user sẽ được xóa
+        set({accessToken: null, user: null, loading: false})
+        // Khi sử dụng local storage nếu người dùng logout hoặc app cần
+        // reset do lỗi thì phải xóa dữ liệu lưu lại trong local storage.
+        // Nếu không, dữ liệu của user trước có thể bị dùng lại khi người 
+        // khác đăng nhập trên cùng 1 máy tính
+        useChatStore.getState().reset();
+        localStorage.clear();
+        sessionStorage.clear();
+    },  
 
     signUp: async (username, password, email, firstName, lastName) => {
         try {
@@ -36,12 +47,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     signIn: async (username, password) => {
         try {
+            get().clearState();
             set({loading: true});
+
+            //Phòng khi có lỗi bất ngờ khiến user bị văng ra mà chưa 
+            // logout thì lúc đăng nhập lại app vẫn khởi động với state 
+            // hoàn toàn mới tránh việc dữ liệu cũ bị xài lại
+
+            localStorage.clear();
+            useChatStore.getState().reset();
 
             const {accessToken} = await authService.signIn(username, password);
             get().setAccessToken(accessToken);
 
             await get().fetchMe();
+            useChatStore.getState().fetchConversations();
 
             toast.success("Chào mừng bạn quay lại với Moji")
         } catch (error) {
@@ -100,4 +120,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
            set({loading: false})
         }
     }
-}))
+}),{
+    name: "auth-storage",
+    partialize: (state) => ({user: state.user}) //chỉ persitst user
+})
+)

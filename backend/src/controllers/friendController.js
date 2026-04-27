@@ -1,6 +1,7 @@
 import Friend from '../models/Friend.js';
 import User from '../models/User.js';
 import FriendRequest from '../models/FriendRequest.js';
+import Conversation from '../models/Conversastion.js'
 
 export const sendFriendRequest = async (req, res) => {
     try {
@@ -87,13 +88,28 @@ export const acceptFriendRequest = async (req, res) => {
             .json({message: 'Bạn không có quyền chấp nhận lời mời này'})
         }
 
-        //Tạo mối quan hệ bạn bè mới
+        // Tạo mối quan hệ bạn bè mới
         const friend = await Friend.create({
             userA: request.from,
             userB: request.to
         })
 
-        //Chấp nhận rồi thì xóa lời mời đi
+        // Tạo cuộc trò chuyện 1-1 cho 2 người vừa kết bạn
+        const conversation = await Conversation.create({
+            type: "direct",
+            participants: [
+                { userId: request.from },
+                { userId: request.to },
+            ],
+            lastMessage: null,
+            seenBy: [],
+            unreadCounts: {
+                [request.from.toString()]: 0,
+                [request.to.toString()]: 0,
+            },
+        })
+
+        // Chấp nhận rồi thì xóa lời mời đi
         await FriendRequest.findByIdAndDelete(requestId);
 
         //Lấy thông tin người gửi lời mời để trả về cho client hiển thị trong giao diện
@@ -105,12 +121,13 @@ export const acceptFriendRequest = async (req, res) => {
         ).lean();
 
         return res.status(200).json({
-             message: "Chấp nhận lời mời kết bạn thành công",
-             newFriend: {
+            message: "Chấp nhận lời mời kết bạn thành công",
+            newFriend: {
                 _id: from?._id,
                 displayName: from?.displayName,
                 avatarUrl: from?.avatarUrl
-             }
+            },
+            conversation
         })
 
     } catch (error) {
@@ -167,8 +184,8 @@ export const getAllFriends = async (req, res) => {
                 }
             ]
             //dùng hàm populate() để lấy thông tin chi tiết
-        }).populate("userA", "_id displayName avatarUrl")
-        .populate("userB", "_id displayName avatarUrl")
+        }).populate("userA", "_id displayName avatarUrl username")
+        .populate("userB", "_id displayName avatarUrl username")
         .lean();
 
         if(!friendships.length){

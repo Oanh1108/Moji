@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useChatStore } from '@/stores/useChatStore';
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router';
 
@@ -23,6 +24,10 @@ const ProtectedRoute = () => {
 
                 if(latestAuth.accessToken && !latestAuth.user) {
                     await latestAuth.fetchMe();
+                }
+
+                if(latestAuth.accessToken) {
+                    await useChatStore.getState().fetchConversations();
                 }
             } finally {
                 if(mounted){

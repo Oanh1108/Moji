@@ -1,6 +1,7 @@
 import Conversation from '../models/Conversastion.js'
 import Message from '../models/Message.js'
-import { updateConversationAfterCreateMessage } from '../utils/messageHelper.js';
+import { emitNewMessage, updateConversationAfterCreateMessage } from '../utils/messageHelper.js';
+import {io} from '../socket/index.js'
 
 export const sendDirectMessage = async (req, res) => {
    try {
@@ -43,6 +44,8 @@ export const sendDirectMessage = async (req, res) => {
     updateConversationAfterCreateMessage(conversation, message, senderId);
 
     await conversation.save();
+
+    emitNewMessage(io, conversation, message)
 
     return res.status(201).json({message})
 
@@ -87,6 +90,8 @@ export const sendGroupMessage = async (req, res) => {
 
         // Lưu lại conversation sau khi cập nhật
         await conversation.save();
+
+        emitNewMessage(io, conversation, message)
 
         // Trả tin nhắn mới về client
         return res.status(201).json({ message });

@@ -3,7 +3,7 @@ import axios from 'axios'
 
 const api = axios.create({
     baseURL:
-        import.meta.env.MODE === "development" ? "http://localhost:5001/api": "/api",
+        import.meta.env.VITE_API_URL,
         withCredentials: true, //nếu không có dòng này thì cookie sẽ không 
         //được gửi lên server và người dùng có thể bị logout liên tục
 })
@@ -44,7 +44,8 @@ api.interceptors.response.use((res) => res, async (error) => {
 
             useAuthStore.getState().setAccessToken(newAccessToken);
 
-            originalResquest.Authorization = `Bearer ${newAccessToken}`;
+            originalResquest.headers = originalResquest.headers || {};
+            originalResquest.headers.Authorization = `Bearer ${newAccessToken}`;
             return api(originalResquest);
         } catch (refreshError) {
             useAuthStore.getState().clearState();

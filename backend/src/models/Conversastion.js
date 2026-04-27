@@ -90,7 +90,7 @@ const conversationSchema = new mongoose.Schema({
 //Khi truy vấn nhanh 1 cuộc hội thoại của người dùng nào đó thì mongodb 
 // có thể lấy ra nhanh nhất những cuộc hội thoại vừa có tin nhắn mới.
 conversationSchema.index({
-    "participant.userId" : 1,
+    "participants.userId" : 1,
     lastMessageAt: -1
 })
 

@@ -5,16 +5,16 @@ import dns from 'dns'
 dns.setServers(['1.1.1.1','8.8.8.8'])
 import authRoute from './routes/authRoute.js'
 import cookieParser from 'cookie-parser'
-import userRoute from './routes/userRpute.js'
+import userRoute from './routes/userRoute.js'
 import { protectedRoute } from './middlewares/authMiddleware.js';
 import cors from 'cors'
 import friendRoute from './routes/friendRoute.js'
 import messageRoute from './routes/messageRoute.js'
 import converesationRoute from './routes/conversationRoute.js'
+import {app, server} from './socket/index.js'
 
 dotenv.config();
 
-const app = express();
 const PORT = process.env.PORT || 5001;
 
 //middleware
@@ -34,7 +34,7 @@ app.use("/api/conversations", converesationRoute);
 
 
 connectDB().then(()=>{
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
     console.log(`Server bắt đầu trên cổng ${PORT}`)
 })
 })
