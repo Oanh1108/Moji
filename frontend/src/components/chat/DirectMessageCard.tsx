@@ -11,7 +11,7 @@ import { useSocketStore } from '@/stores/useSocketStore';
 const DirectMessageCard = ({convo} : {convo: Conversation}) => {
 
     const {user} = useAuthStore();
-    const {activeConversationId, setActiveConversation, messages, fetchMessages} = useChatStore();
+    const {activeConversationId, setActiveConversation, messages, fetchMessages, markAsSeen} = useChatStore();
     const {onlineUsers} = useSocketStore();
 
     if(!user) return null;
@@ -25,12 +25,14 @@ const DirectMessageCard = ({convo} : {convo: Conversation}) => {
     const lastMessage = convo.lastMessage?.content ?? "";
 
     const handleSelectConversation = async (id: string) => {
-        setActiveConversation(id);
-        if(!messages[id]){
-            //todo: fetch messages
-            await fetchMessages();
-        }
+    setActiveConversation(id);
+
+    await markAsSeen();
+
+    if(!messages[id]){
+        await fetchMessages(id);
     }
+}
 
   return (
       <ChatCard

@@ -11,8 +11,7 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
   const { user } = useAuthStore()
 
   // Lấy dữ liệu chat từ store
-  const { activeConversationId, setActiveConversation, messages, fetchMessages } = useChatStore()
-
+  const { activeConversationId, setActiveConversation, messages, fetchMessages, markAsSeen } = useChatStore()
   // Nếu chưa có user thì không hiển thị gì cả
   if (!user) return null
 
@@ -25,16 +24,14 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
 
   // Hàm này chạy khi user click vào card nhóm chat
   const handleSelectConversation = async (id: string) => {
-    // Lưu id cuộc trò chuyện đang được chọn
-    setActiveConversation(id)
+  setActiveConversation(id)
 
-    // Nếu chưa có tin nhắn của nhóm này trong store
-    // thì sau này sẽ gọi API để lấy tin nhắn
-    if (!messages[id]) {
-      // todo: fetch messages
-      await fetchMessages();
-    }
+  await markAsSeen() 
+
+  if (!messages[id]) {
+    await fetchMessages(id)
   }
+}
 
   return (
     <div>

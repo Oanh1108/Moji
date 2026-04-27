@@ -5,18 +5,21 @@ import Conversation from '../models/Conversastion.js'
 
 export const sendFriendRequest = async (req, res) => {
     try {
-        //Lấy dữ liệu to và message 
-        const {to, message} = req.body;
+        console.log("BODY FRIEND REQUEST:", req.body);
+    console.log("USER LOGIN:", req.user?._id);
 
-        //Lấy id của người đang đăng nhập
-        const from = req.user._id;
+    const { to, message } = req.body;
+    const from = req.user._id;
 
-        //Để tránh trường hợp người dùng tự gửi lời mới cho chính mình 
-        if(from === to){
-            return res.status(400)
-            .json({message: "Không thể gửi lời mời kết bạn cho chính mình"})
-        }
+    if (!to) {
+      return res.status(400).json({ message: "Thiếu người nhận lời mời" });
+    }
 
+    if (from.toString() === to.toString()) {
+      return res.status(400).json({
+        message: "Không thể gửi lời mời kết bạn cho chính mình"
+      });
+    }
         //Kiểm tra xem người nhận lời mời có trong db không
         const userExists = await User.exists({_id: to});
 

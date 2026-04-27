@@ -3,10 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { UserPlus } from "lucide-react";
 import { useFriendStore } from "@/stores/useFriendStore";
 import type { User } from "@/types/user";
-import { data } from "react-router";
 import { toast } from "sonner";
-import SearchForm from "../AddFriendModal/SearchForm";
-import SendFriendRequestForm from "../AddFriendModal/SendFriendRequestForm";
+import SearchForm from "../addFriendModal/SearchForm";
+import SendFriendRequestForm from "../addFriendModal/SendFriendRequestForm";
 import { useForm } from "react-hook-form";
 
 export interface IFormValues {
@@ -61,6 +60,11 @@ const AddFriendModal = () => {
       toast.success(message);
       handleCancel();
     } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : "Lỗi xảy ra khi gửi kết bạn. Hãy thử lại";
+
+      toast.error(message);
       console.error("Lỗi xảy ra khi gửi request từ form", error)
     }
   })

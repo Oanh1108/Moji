@@ -15,6 +15,10 @@ export const useAuthStore = create<AuthState>()(
         set({accessToken})
     },
 
+    setUser: (user) => {
+        set({user});
+    },
+
     clearState: () => {
         //Mục đích của hàm này là tái sử dụng nhiều lần
     //VD: sau khi logout hoặc token hết hạn, chỉ cần gọi clear token là 
