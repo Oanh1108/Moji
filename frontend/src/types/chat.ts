@@ -5,7 +5,7 @@ export interface Participant {
   joinedAt: string;
 }
 
-export interface SeenUser {
+export type SeenUser = string | {
   _id: string;
   displayName?: string;
   avatarUrl?: string | null;

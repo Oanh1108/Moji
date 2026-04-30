@@ -97,8 +97,8 @@ export interface ChatState {
   //add message
   addMessage: (message: Message) => Promise<void>;
   //update convo
-  updateConversation: (conversation: unknown) => void;
-  markAsSeen: () => Promise<void>;
+  updateConversation: (conversation: Partial<Conversation> & Pick<Conversation, "_id">) => void;
+  markAsSeen: (conversationId?: string) => Promise<void>;
   
   addConvo:(convo: Conversation) => void;
   createConversation: (type: "group" | "direct", name: string, memberIds: string[]) => Promise<void>
@@ -107,6 +107,7 @@ export interface ChatState {
 export interface SocketState {
     socket: Socket | null;
     onlineUsers: string[];
+    typingUsers: Record<string, string>;
     connectSocket: () => void;
     disconnectSocket: () => void;
 }

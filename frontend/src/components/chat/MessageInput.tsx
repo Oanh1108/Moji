@@ -3,17 +3,20 @@ import type { Conversation } from "@/types/chat";
 import { Button } from "../ui/button";
 import { ImagePlus, Send } from "lucide-react";
 import { Input } from "../ui/input";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import EmojiPicker from "./EmojiPicker";
 import { useChatStore } from "@/stores/useChatStore";
 import { toast } from "sonner";
+import { useSocketStore } from "@/stores/useSocketStore";
 
 
 export const MessageInput = ({selectedConvo} : {selectedConvo: Conversation}) => {
 
   const {user} = useAuthStore();
-  const {sendDirectMessage, sendGroupMessage} = useChatStore();
+  const {sendDirectMessage, sendGroupMessage, markAsSeen} = useChatStore();
+  const {socket} = useSocketStore();
   const [value, setValue] = useState("")
+  const lastTypingAtRef = useRef(0);
 
   if(!user) return;
 
@@ -43,6 +46,28 @@ export const MessageInput = ({selectedConvo} : {selectedConvo: Conversation}) =>
     }
   }
 
+  const emitTyping = () => {
+    if(selectedConvo.type !== "direct" || !socket) return;
+
+    const now = Date.now();
+    if(now - lastTypingAtRef.current < 800) return;
+
+    lastTypingAtRef.current = now;
+    console.log("CLIENT emit typing", {
+      conversationId: selectedConvo._id,
+      userId: user._id,
+    });
+
+    socket.emit("typing", {
+      conversationId: selectedConvo._id,
+    });
+  }
+
+  const handleInputFocus = () => {
+    if(selectedConvo.type !== "direct") return;
+    markAsSeen(selectedConvo._id);
+  }
+
   return (
     <div className="flex items-center gap-2 p-3 min-h-[56px] bg-background">
       <Button variant='ghost' size='icon' className='hover:bg-primary/10 transition-smooth'>
@@ -52,8 +77,13 @@ export const MessageInput = ({selectedConvo} : {selectedConvo: Conversation}) =>
       <div className="flex-1 relative">
         <Input 
           onKeyDown={handleKeyPress}
+          onFocus={handleInputFocus}
+          onClick={handleInputFocus}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            setValue(e.target.value);
+            emitTyping();
+          }}
           placeholder="Soạn tin nhắn..."
           className="pr-20 h-9 bg-white border-border/50 focus:border-primary/50 transition-smooth resize-none"
         ></Input>
@@ -68,8 +98,6 @@ export const MessageInput = ({selectedConvo} : {selectedConvo: Conversation}) =>
               </div>
             </Button>
           </div>
-
-          
       </div>
       <Button
           onClick={sendMessage} 

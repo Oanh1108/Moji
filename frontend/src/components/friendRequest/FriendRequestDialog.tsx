@@ -8,7 +8,7 @@ import {
 
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {useFriendStore} from '@/stores/useFriendStore';
-import SentRequest from "./SentRequest";
+import SentRequest from "./SentRequests";
 import ReceivedRequests from "./ReceivedRequests";
 
 interface FriendRequestDialogProps {
@@ -46,7 +46,7 @@ const FriendRequestDialog = ({open, setOpen} : FriendRequestDialogProps) => {
             <Tabs
                 value={tab}
                 onValueChange={setTab}
-                className='w-full'
+                className='w-full flex-col'
             >
                 <TabsList className="grid w-full grid-cols-2 h-8 rounded-full bg-muted p-1">
                     <TabsTrigger

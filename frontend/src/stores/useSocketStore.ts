@@ -5,10 +5,12 @@ import type { SocketState } from '@/types/store';
 import { useChatStore } from './useChatStore';
 
 const baseUrl = import.meta.env.VITE_SOCKET_URL;
+const typingTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
 export const useSocketStore = create<SocketState>((set, get) => ({
     socket: null,
     onlineUsers:[],
+    typingUsers: {},
     connectSocket: () => {
         const accessToken = useAuthStore.getState().accessToken;
         const existingSocket = get().socket;
@@ -30,6 +32,32 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         socket.on("online-users", (userIds) => {
             set({onlineUsers: userIds})
         })
+
+        socket.on("typing", ({conversationId, userId}) => {
+            if(!conversationId || !userId) return;
+
+            console.log("CLIENT nhận typing", {conversationId, userId});
+
+            if(typingTimers[conversationId]){
+                clearTimeout(typingTimers[conversationId]);
+            }
+
+            set((state) => ({
+                typingUsers: {
+                    ...state.typingUsers,
+                    [conversationId]: userId
+                }
+            }));
+
+            typingTimers[conversationId] = setTimeout(() => {
+                set((state) => {
+                    const typingUsers = {...state.typingUsers};
+                    delete typingUsers[conversationId];
+                    return {typingUsers};
+                });
+                delete typingTimers[conversationId];
+            }, 2000);
+        });
 
         //new message
         socket.on("new-message", ({message, conversation, unreadCounts}) => {
@@ -84,7 +112,11 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         const socket = get().socket;
         if(socket) {
             socket.disconnect();
-            set({socket: null})
+            Object.values(typingTimers).forEach(clearTimeout);
+            Object.keys(typingTimers).forEach((key) => delete typingTimers[key]);
+            set({socket: null, typingUsers: {}})
         }
     },
 }))
+
+

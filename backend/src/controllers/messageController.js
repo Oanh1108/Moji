@@ -16,10 +16,19 @@ export const sendDirectMessage = async (req, res) => {
     }
 
     //Tìm hoặc tạo conversation
-    if(conversationId){
-        //conversationId có giá trị thì tìm conversation trong db
-        conversation = await Conversation.findById(conversationId)
-    }
+    if (conversationId) {
+    conversation = await Conversation.findById(conversationId);
+} else {
+    conversation = await Conversation.findOne({
+        type: "direct",
+        participants: {
+            $all: [
+                { $elemMatch: { userId: senderId } },
+                { $elemMatch: { userId: recipientId } }
+            ]
+        }
+    });
+}
 
     //Nếu không có hoặc không tìm thấy conversation thì tạo 1 conversation mới
     if(!conversation){

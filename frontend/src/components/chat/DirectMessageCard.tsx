@@ -77,3 +77,4 @@ const DirectMessageCard = ({convo} : {convo: Conversation}) => {
 }
 
 export default DirectMessageCard
+

@@ -11,7 +11,7 @@ import { useSocketStore } from '@/stores/useSocketStore';
 const ChatWindowHeader = ({chat} : {chat? : Conversation}) => {
     const {conversations, activeConversationId} = useChatStore();
     const {user} = useAuthStore();
-    const {onlineUsers} = useSocketStore();
+    const {onlineUsers, typingUsers} = useSocketStore();
 
     let otherUser;
 
@@ -68,9 +68,14 @@ const ChatWindowHeader = ({chat} : {chat? : Conversation}) => {
                 </div>
 
                 {/* name */}
-                <h2 className='font-semibold text-foreground'>
-                    {chat.type === 'direct' ? otherUser?.displayName : chat.group?.name}
-                </h2>
+                <div className='min-w-0'>
+                    <h2 className='font-semibold text-foreground'>
+                        {chat.type === 'direct' ? otherUser?.displayName : chat.group?.name}
+                    </h2>
+                    {chat.type === "direct" && typingUsers[chat._id] === otherUser?._id && (
+                        <p className='text-xs font-medium text-primary'>Đang nhập...</p>
+                    )}
+                </div>
             </div>
 
         </div>

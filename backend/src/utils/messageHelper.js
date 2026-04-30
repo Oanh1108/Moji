@@ -19,14 +19,19 @@ export const updateConversationAfterCreateMessage =
 }
 
 export const emitNewMessage = (io, conversation, message) => {
+    const unreadCounts = conversation.unreadCounts instanceof Map
+        ? Object.fromEntries(conversation.unreadCounts)
+        : conversation.unreadCounts;
+
     io.to(conversation._id.toString()).emit("new-message", {
         message,
         conversation: {
             _id: conversation._id,
             lastMessage: conversation.lastMessage,
             lastMessageAt: conversation.lastMessageAt,
+            seenBy: conversation.seenBy || [],
         },
-        unreadCounts: conversation.unreadCounts,
+        unreadCounts,
     });
 
 }

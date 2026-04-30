@@ -179,31 +179,45 @@ export const useChatStore = create<ChatState>()(
         }))
       },
 
-      markAsSeen: async () => {
+      markAsSeen: async (conversationId) => {
         try {
           const {user}  = useAuthStore.getState();
           const {activeConversationId, conversations} = get();
 
-          if(!activeConversationId || !user){
+          const convoId = conversationId ?? activeConversationId;
+
+          if(!convoId || !user){
             return;
           }
 
-          const convo = conversations.find((c) => c._id === activeConversationId);
+          const convo = conversations.find((c) => c._id === convoId);
 
           if(!convo){
             return;
           }
 
-          if((convo.unreadCounts?.[user._id] ?? 0) === 0){
+          const lastSenderId = convo.lastMessage?.sender?._id?.toString();
+
+          if(!lastSenderId || lastSenderId === user._id){
             return;
           }
 
-          await chatService.markAsSeen(activeConversationId);
+          const hasSeen = (convo.seenBy ?? []).some((seenUser) => {
+            const seenUserId = typeof seenUser === "string" ? seenUser : seenUser._id;
+            return seenUserId?.toString() === user._id;
+          });
+
+          if(hasSeen){
+            return;
+          }
+
+          const result = await chatService.markAsSeen(convoId);
 
           set((state) => ({
             conversations: state.conversations.map((c) => 
-              c._id === activeConversationId && c.lastMessage ? {
+              c._id === convoId && c.lastMessage ? {
                 ...c,
+                seenBy: result.seenBy ?? c.seenBy,
                 unreadCounts: {
                   ...c.unreadCounts,
                   [user._id]: 0

@@ -285,8 +285,15 @@ export const markAsSeen = async (req, res) => {
             }
         );
 
+        const unreadCounts = updated?.unreadCounts instanceof Map
+            ? Object.fromEntries(updated.unreadCounts)
+            : updated?.unreadCounts;
+
         io.to(conversationId).emit("read-message", {
-            conversation: updated,
+            conversation: {
+                ...updated?.toObject(),
+                unreadCounts,
+            },
             lastMessage: {
                 _id: updated?.lastMessage._id,
                 content: updated?.lastMessage.content,
@@ -297,10 +304,14 @@ export const markAsSeen = async (req, res) => {
             }
         })
 
+        const myUnreadCount = typeof updated?.unreadCounts?.get === "function"
+            ? updated.unreadCounts.get(userId) || 0
+            : updated?.unreadCounts?.[userId] || 0;
+
         return res.status(200).json({
             message: "Marked as seen",
             seenBy: updated?.seenBy || [],
-            myUnreadCount: updated?.unreadCounts[userId] || 0,
+            myUnreadCount,
         });
 
     } catch (error) {

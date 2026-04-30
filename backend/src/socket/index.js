@@ -38,6 +38,20 @@ io.on("connection", async (socket) => {
 
     socket.join(user._id.toString());
 
+    socket.on("typing", ({conversationId}) => {
+        if(!conversationId) return;
+
+        console.log("SERVER nhận typing", {
+            conversationId,
+            userId: user._id.toString(),
+        });
+
+        socket.to(conversationId).emit("typing", {
+            conversationId,
+            userId: user._id.toString(),
+        });
+    });
+
     socket.on("disconnect", () => {
         onlineUsers.delete(user._id);
         io.emit("online-users", Array.from(onlineUsers.keys()))
