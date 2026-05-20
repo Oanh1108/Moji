@@ -1,27 +1,29 @@
 # Moji
 
-Moji là ứng dụng chat realtime được xây dựng với React, Node.js, Express, Socket.IO và MongoDB. Dự án hỗ trợ nhắn tin trực tiếp, chat nhóm, trạng thái online, typing indicator, lời mời kết bạn, gửi hình ảnh, xem ảnh trong chat, chỉnh sửa hồ sơ cá nhân và đổi mật khẩu.
+Moji là ứng dụng nhắn tin realtime được xây dựng với React, TypeScript, Node.js, Express, Socket.IO và MongoDB. Dự án hỗ trợ trò chuyện 1-1, chat nhóm, trạng thái online, thông báo đang nhập, số tin nhắn chưa đọc, gửi hình ảnh và quản lý hồ sơ người dùng.
 
-## Tính năng chính
+## Tính Năng
 
 - Đăng ký, đăng nhập, đăng xuất.
 - Xác thực bằng access token và refresh token.
-- Chat realtime bằng Socket.IO.
-- Nhắn tin 1-1 giữa bạn bè.
-- Tạo nhóm chat và gửi tin nhắn nhóm.
+- Nhắn tin realtime bằng Socket.IO.
+- Chat 1-1 giữa bạn bè.
+- Tạo nhóm chat và nhắn tin nhóm.
+- Hiển thị trạng thái online/offline.
+- Hiển thị người dùng đang nhập tin nhắn.
+- Lưu và hiển thị số tin nhắn chưa đọc.
+- Đánh dấu đã xem khi người dùng mở cuộc trò chuyện.
 - Gửi hình ảnh trong tin nhắn.
-- Bấm vào hình ảnh để xem ảnh lớn.
-- Hiển thị người dùng online/offline.
-- Hiển thị trạng thái đang nhập tin nhắn.
+- Xem ảnh lớn khi bấm vào hình ảnh trong chat.
 - Gửi, nhận, chấp nhận và từ chối lời mời kết bạn.
 - Cập nhật ảnh đại diện.
 - Xem ảnh đại diện khi bấm vào avatar.
 - Cập nhật tên hiển thị, bio và số điện thoại.
 - Đổi mật khẩu trong phần Profile & Settings.
 - Phân trang lịch sử tin nhắn.
-- Giới hạn spam request cơ bản cho đăng nhập, gửi tin nhắn, upload và thao tác bạn bè.
+- Giới hạn request cơ bản cho đăng nhập, gửi tin, upload và thao tác bạn bè.
 
-## Công nghệ sử dụng
+## Công Nghệ
 
 ### Frontend
 
@@ -47,7 +49,7 @@ Moji là ứng dụng chat realtime được xây dựng với React, Node.js, E
 - Multer
 - Cloudinary
 
-## Cấu trúc thư mục
+## Cấu Trúc Dự Án
 
 ```txt
 Moji/
@@ -65,29 +67,30 @@ Moji/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   ├── hooks/
 │   │   ├── lib/
 │   │   ├── pages/
 │   │   ├── services/
 │   │   ├── stores/
 │   │   └── types/
+│   ├── vercel.json
 │   └── package.json
+├── .gitignore
 └── README.md
 ```
 
-## Yêu cầu trước khi chạy
+## Yêu Cầu
 
 - Node.js
 - npm
 - MongoDB database
 - Cloudinary account
 
-## Cài đặt
+## Cài Đặt
 
-Clone project:
+Clone repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Oanh1108/Moji.git
 cd Moji
 ```
 
@@ -105,7 +108,7 @@ cd ../frontend
 npm install
 ```
 
-## Cấu hình biến môi trường
+## Biến Môi Trường
 
 Tạo file `backend/.env`:
 
@@ -129,7 +132,7 @@ VITE_SOCKET_URL=http://localhost:5001
 
 Không commit file `.env` thật lên GitHub.
 
-## Chạy project ở local
+## Chạy Local
 
 Chạy backend:
 
@@ -145,7 +148,7 @@ cd frontend
 npm run dev
 ```
 
-Mở trình duyệt tại:
+Mở trình duyệt:
 
 ```txt
 http://localhost:5173
@@ -169,6 +172,75 @@ npm run lint
 npm run preview
 ```
 
-## Tác giả
+## Deploy
+
+### Frontend trên Vercel
+
+Cấu hình project Vercel:
+
+```txt
+Root Directory: frontend
+Build Command: npm run build
+Output Directory: dist
+```
+
+Biến môi trường production:
+
+```env
+VITE_API_URL=https://your-backend-url.onrender.com/api
+VITE_SOCKET_URL=https://your-backend-url.onrender.com
+```
+
+File `frontend/vercel.json` dùng để rewrite route React Router về `index.html`, giúp các đường dẫn như `/signin` và `/signup` không bị 404 khi refresh.
+
+### Backend trên Render
+
+Cấu hình service Render:
+
+```txt
+Root Directory: backend
+Build Command: npm install
+Start Command: npm start
+```
+
+Biến môi trường production:
+
+```env
+NODE_ENV=production
+CLIENT_URL=https://your-frontend-url.vercel.app
+MONGODB_CONNECTIONSTRING=your_mongodb_connection_string
+ACCESS_TOKEN_SECRET=your_access_token_secret
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+```
+
+Nếu có nhiều frontend URL, có thể đặt `CLIENT_URL` dạng:
+
+```env
+CLIENT_URL=https://your-frontend-url.vercel.app,https://another-domain.com
+```
+
+## Lỗi Thường Gặp
+
+### Vercel mở `/signin` bị 404
+
+Kiểm tra file `frontend/vercel.json` đã được commit và deploy chưa.
+
+### Không thấy online hoặc tin nhắn realtime chậm
+
+Kiểm tra backend Render có đang chạy không:
+
+```txt
+https://your-backend-url.onrender.com/api/health
+```
+
+Nếu backend trả `502 Bad Gateway`, cần redeploy hoặc kiểm tra logs trên Render.
+
+### Gửi ảnh không được
+
+Kiểm tra Cloudinary env trong backend và dung lượng ảnh. Ứng dụng giới hạn ảnh chat ở mức 5MB.
+
+## Tác Giả
 
 Moji được phát triển bởi Oanh1108.
