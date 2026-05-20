@@ -221,26 +221,6 @@ Nếu có nhiều frontend URL, có thể đặt `CLIENT_URL` dạng:
 CLIENT_URL=https://your-frontend-url.vercel.app,https://another-domain.com
 ```
 
-## Lỗi Thường Gặp
-
-### Vercel mở `/signin` bị 404
-
-Kiểm tra file `frontend/vercel.json` đã được commit và deploy chưa.
-
-### Không thấy online hoặc tin nhắn realtime chậm
-
-Kiểm tra backend Render có đang chạy không:
-
-```txt
-https://your-backend-url.onrender.com/api/health
-```
-
-Nếu backend trả `502 Bad Gateway`, cần redeploy hoặc kiểm tra logs trên Render.
-
-### Gửi ảnh không được
-
-Kiểm tra Cloudinary env trong backend và dung lượng ảnh. Ứng dụng giới hạn ảnh chat ở mức 5MB.
-
 ## Tác Giả
 
 Moji được phát triển bởi Oanh1108.
