@@ -13,26 +13,11 @@ import messageRoute from './routes/messageRoute.js'
 import converesationRoute from './routes/conversationRoute.js'
 import {app, server} from './socket/index.js'
 import { v2 as cloudinary } from 'cloudinary';
+import { corsOptions } from './utils/corsOptions.js';
 
 dotenv.config();
 
 const PORT = process.env.PORT || 5001;
-const allowedOrigins = (process.env.CLIENT_URL || "")
-    .split(",")
-    .map((origin) => origin.trim().replace(/\/$/, ""))
-    .filter(Boolean);
-
-const corsOptions = {
-    origin(origin, callback) {
-        if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
-            return callback(null, true);
-        }
-
-        return callback(null, false);
-    },
-    credentials: true,
-    optionsSuccessStatus: 204,
-};
 
 //middleware
 app.use(express.json({limit: '32kb'}));

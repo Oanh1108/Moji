@@ -4,7 +4,10 @@ import { useAuthStore } from './useAuthStore';
 import type { SocketState } from '@/types/store';
 import { useChatStore } from './useChatStore';
 
-const baseUrl = import.meta.env.VITE_SOCKET_URL;
+const getSocketUrl = () =>
+    import.meta.env.VITE_SOCKET_URL ||
+    import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
+    window.location.origin;
 const typingTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
 export const useSocketStore = create<SocketState>((set, get) => ({
@@ -15,17 +18,54 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         const accessToken = useAuthStore.getState().accessToken;
         const existingSocket = get().socket;
 
-        if(existingSocket) return;
+        if(!accessToken) return;
 
-        const socket: Socket = io(baseUrl, {
+        if(existingSocket?.connected) return;
+
+        if(existingSocket) {
+            existingSocket.disconnect();
+        }
+
+        const socket: Socket = io(getSocketUrl(), {
             auth: {token: accessToken},
-            transports: ["websocket"]
+            transports: ["websocket", "polling"],
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 500,
+            timeout: 20000,
         });
 
         set({socket});
+        let refreshingToken = false;
 
         socket.on("connect", () => {
             console.log("Da ket noi socket")
+        });
+
+        socket.on("connect_error", async (error) => {
+            console.error("Loi ket noi socket", error.message);
+
+            if(!error.message.includes("Unauthorized") || refreshingToken) {
+                return;
+            }
+
+            refreshingToken = true;
+
+            try {
+                await useAuthStore.getState().refresh();
+                const newToken = useAuthStore.getState().accessToken;
+
+                if(newToken) {
+                    socket.auth = {token: newToken};
+                    socket.connect();
+                }
+            } finally {
+                refreshingToken = false;
+            }
+        });
+
+        socket.on("disconnect", (reason) => {
+            console.warn("Mat ket noi socket", reason);
         });
 
         socket.on("online-users", (userIds: string[]) => {
@@ -74,8 +114,25 @@ export const useSocketStore = create<SocketState>((set, get) => ({
             }, 2000);
         });
 
-        socket.on("new-message", ({message, conversation, unreadCounts}) => {
-            useChatStore.getState().addMessage(message);
+        socket.on("new-message", async ({message, conversation, unreadCounts}) => {
+            if(message?.conversationId) {
+                socket.emit("join-conversation", message.conversationId);
+            }
+
+            const isKnownConversation = useChatStore
+                .getState()
+                .conversations
+                .some((c) => c._id === conversation?._id);
+
+            if(!isKnownConversation) {
+                await useChatStore.getState().fetchConversations();
+            }
+
+            await useChatStore.getState().addMessage(message);
+
+            if(!conversation?.lastMessage) {
+                return;
+            }
 
             const lastMessage = {
                 _id: conversation.lastMessage._id,
@@ -94,11 +151,11 @@ export const useSocketStore = create<SocketState>((set, get) => ({
                 unreadCounts
             }
 
-            if(useChatStore.getState().activeConversationId === message.conversationId){
-                useChatStore.getState().markAsSeen();
-            }
-
             useChatStore.getState().updateConversation(updateConversation);
+
+            if(useChatStore.getState().activeConversationId === message.conversationId){
+                useChatStore.getState().markAsSeen(message.conversationId);
+            }
         })
 
         socket.on("read-message", ({conversation, lastMessage}) => {
@@ -125,7 +182,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
             socket.disconnect();
             Object.values(typingTimers).forEach(clearTimeout);
             Object.keys(typingTimers).forEach((key) => delete typingTimers[key]);
-            set({socket: null, typingUsers: {}})
+            set({socket: null, typingUsers: {}, onlineUsers: []})
         }
     },
 }))

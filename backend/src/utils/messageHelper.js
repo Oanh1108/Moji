@@ -24,7 +24,14 @@ export const emitNewMessage = (io, conversation, message) => {
         ? Object.fromEntries(conversation.unreadCounts)
         : conversation.unreadCounts;
 
-    io.to(conversation._id.toString()).emit("new-message", {
+    const conversationId = conversation._id.toString();
+    const participantIds = (conversation.participants || [])
+        .map((participant) => participant.userId?.toString())
+        .filter(Boolean);
+
+    const rooms = [conversationId, ...participantIds];
+
+    io.to(rooms).emit("new-message", {
         message,
         conversation: {
             _id: conversation._id,

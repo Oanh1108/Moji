@@ -1,9 +1,22 @@
 import { chatService } from '@/services/chatService'
+import type { Message } from '@/types/chat'
 import type { ChatState } from '@/types/store'
+import type { User } from '@/types/user'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { useAuthStore } from './useAuthStore'
 import { useSocketStore } from './useSocketStore'
+
+const buildSentLastMessage = (message: Message, user: User) => ({
+  _id: message._id,
+  content: message.content || (message.imgUrl ? "Đã gửi một ảnh" : ""),
+  createdAt: message.createdAt,
+  sender: {
+    _id: user._id,
+    displayName: user.displayName,
+    avatarUrl: user.avatarUrl ?? null
+  }
+});
 
 // Tạo store để lưu dữ liệu chat
 export const useChatStore = create<ChatState>()(
@@ -111,10 +124,27 @@ export const useChatStore = create<ChatState>()(
       sendDirectMessage: async(recipientId, content, image) => {
         try {
           const {activeConversationId} = get();
-          await chatService.sendDirectMessage(recipientId, content, image, activeConversationId || undefined);
+          const {user} = useAuthStore.getState();
+          const message = await chatService.sendDirectMessage(recipientId, content, image, activeConversationId || undefined);
+          const targetConversationId = activeConversationId || message.conversationId;
+
+          await get().addMessage(message);
+
+          if(!targetConversationId || !user) {
+            return;
+          }
 
           set((state) => ({
-            conversations: state.conversations.map((c) => c._id === activeConversationId ? {...c, seenBy:[]} : c),
+            conversations: state.conversations.map((c) => c._id === targetConversationId ? {
+              ...c,
+              lastMessage: buildSentLastMessage(message, user),
+              lastMessageAt: message.createdAt,
+              seenBy: [],
+              unreadCounts: {
+                ...c.unreadCounts,
+                [user._id]: 0,
+              },
+            } : c),
           }))
 
         } catch (error) {
@@ -124,11 +154,27 @@ export const useChatStore = create<ChatState>()(
 
       sendGroupMessage: async(conversationId, content, image) => {
         try {
-          await chatService.sendGroupMessage(conversationId, content, image);
+          const {user} = useAuthStore.getState();
+          const message = await chatService.sendGroupMessage(conversationId, content, image);
+
+          await get().addMessage(message);
+
+          if(!user) {
+            return;
+          }
 
           set((state) => ({
             conversations: state.conversations.map((c) => 
-            c._id === get().activeConversationId ? { ...c, seenBy: []} : c),
+            c._id === conversationId ? {
+              ...c,
+              lastMessage: buildSentLastMessage(message, user),
+              lastMessageAt: message.createdAt,
+              seenBy: [],
+              unreadCounts: {
+                ...c.unreadCounts,
+                [user._id]: 0,
+              },
+            } : c),
           }))
         } catch (error) {
           console.error("Lỗi xảy ra khi gửi group message", error)
