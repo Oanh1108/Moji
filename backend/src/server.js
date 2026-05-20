@@ -17,11 +17,34 @@ import { v2 as cloudinary } from 'cloudinary';
 dotenv.config();
 
 const PORT = process.env.PORT || 5001;
+const allowedOrigins = (process.env.CLIENT_URL || "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+
+const corsOptions = {
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
+            return callback(null, true);
+        }
+
+        return callback(null, false);
+    },
+    credentials: true,
+    optionsSuccessStatus: 204,
+};
 
 //middleware
 app.use(express.json({limit: '32kb'}));
 app.use(cookieParser());
-app.use(cors({origin: process.env.CLIENT_URL, credentials: true}))
+app.use(cors(corsOptions))
+app.use((req, res, next) => {
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(204);
+    }
+
+    next();
+});
 
 //CLOUDINARY Configuration
 cloudinary.config({ 
@@ -31,6 +54,10 @@ cloudinary.config({
 });
 
 //public routes
+app.get("/api/health", (req, res) => {
+    res.status(200).json({status: "ok"});
+});
+
 app.use("/api/auth", authRoute)
 
 //private routes
@@ -40,6 +67,19 @@ app.use("/api/friends", friendRoute);
 app.use("/api/messages", messageRoute);
 app.use("/api/conversations", converesationRoute);
 
+app.use((err, req, res, next) => {
+    console.error("Unhandled server error", err);
+
+    if (res.headersSent) {
+        return next(err);
+    }
+
+    if (err instanceof SyntaxError && "body" in err) {
+        return res.status(400).json({message: "JSON không hợp lệ"});
+    }
+
+    return res.status(500).json({message: "Lỗi hệ thống"});
+});
 
 connectDB().then(()=>{
     server.listen(PORT, () => {
