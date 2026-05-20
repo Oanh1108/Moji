@@ -18,6 +18,20 @@ const buildSentLastMessage = (message: Message, user: User) => ({
   }
 });
 
+export const normalizeUnreadCounts = (unreadCounts: unknown): Record<string, number> => {
+  if(!unreadCounts || typeof unreadCounts !== "object") {
+    return {};
+  }
+
+  return Object.entries(unreadCounts as Record<string, unknown>).reduce<Record<string, number>>(
+    (counts, [userId, value]) => {
+      counts[userId] = Number(value) || 0;
+      return counts;
+    },
+    {}
+  );
+};
+
 // Tạo store để lưu dữ liệu chat
 export const useChatStore = create<ChatState>()(
   persist(
@@ -63,8 +77,13 @@ export const useChatStore = create<ChatState>()(
 
           console.log("Data API trả về:", data)
 
+          const conversations = data.conversations ?? data;
+
           set({
-            conversations: data.conversations ?? data,
+            conversations: conversations.map((conversation) => ({
+              ...conversation,
+              unreadCounts: normalizeUnreadCounts(conversation.unreadCounts),
+            })),
             convoLoading: false,
           })
         } catch (error) {
@@ -141,7 +160,7 @@ export const useChatStore = create<ChatState>()(
               lastMessageAt: message.createdAt,
               seenBy: [],
               unreadCounts: {
-                ...c.unreadCounts,
+                ...normalizeUnreadCounts(c.unreadCounts),
                 [user._id]: 0,
               },
             } : c),
@@ -171,7 +190,7 @@ export const useChatStore = create<ChatState>()(
               lastMessageAt: message.createdAt,
               seenBy: [],
               unreadCounts: {
-                ...c.unreadCounts,
+                ...normalizeUnreadCounts(c.unreadCounts),
                 [user._id]: 0,
               },
             } : c),
@@ -232,7 +251,13 @@ export const useChatStore = create<ChatState>()(
       updateConversation: (conversation) => {
         set((state) => ({
           conversations: state.conversations.map((c) => 
-          c._id === conversation._id ? {...c, ...conversation} : c),
+          c._id === conversation._id ? {
+            ...c,
+            ...conversation,
+            unreadCounts: conversation.unreadCounts === undefined
+              ? c.unreadCounts
+              : normalizeUnreadCounts(conversation.unreadCounts),
+          } : c),
         }))
       },
 
@@ -276,7 +301,7 @@ export const useChatStore = create<ChatState>()(
                 ...c,
                 seenBy: result.seenBy ?? c.seenBy,
                 unreadCounts: {
-                  ...c.unreadCounts,
+                  ...normalizeUnreadCounts(c.unreadCounts),
                   [user._id]: 0
                 }
               }

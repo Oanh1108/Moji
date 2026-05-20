@@ -2,7 +2,7 @@ import {create} from 'zustand'
 import {io, type Socket} from 'socket.io-client';
 import { useAuthStore } from './useAuthStore';
 import type { SocketState } from '@/types/store';
-import { useChatStore } from './useChatStore';
+import { normalizeUnreadCounts, useChatStore } from './useChatStore';
 
 const getSocketUrl = () =>
     import.meta.env.VITE_SOCKET_URL ||
@@ -119,10 +119,10 @@ export const useSocketStore = create<SocketState>((set, get) => ({
                 socket.emit("join-conversation", message.conversationId);
             }
 
-            const isKnownConversation = useChatStore
-                .getState()
-                .conversations
-                .some((c) => c._id === conversation?._id);
+            const userId = useAuthStore.getState().user?._id;
+            const chatState = useChatStore.getState();
+            const currentConversation = chatState.conversations.find((c) => c._id === conversation?._id);
+            const isKnownConversation = !!currentConversation;
 
             if(!isKnownConversation) {
                 await useChatStore.getState().fetchConversations();
@@ -145,17 +145,29 @@ export const useSocketStore = create<SocketState>((set, get) => ({
                 }
             };
 
+            const previousUnreadCounts = normalizeUnreadCounts(currentConversation?.unreadCounts);
+            const nextUnreadCounts = normalizeUnreadCounts(unreadCounts);
+            const isOwnMessage = message.senderId === userId;
+            const isActiveConversation = chatState.activeConversationId === message.conversationId;
+
+            if(userId) {
+                if(isOwnMessage || isActiveConversation) {
+                    nextUnreadCounts[userId] = 0;
+                } else {
+                    nextUnreadCounts[userId] = Math.max(
+                        nextUnreadCounts[userId] ?? 0,
+                        (previousUnreadCounts[userId] ?? 0) + 1
+                    );
+                }
+            }
+
             const updateConversation = {
                 ...conversation,
                 lastMessage,
-                unreadCounts
+                unreadCounts: nextUnreadCounts
             }
 
             useChatStore.getState().updateConversation(updateConversation);
-
-            if(useChatStore.getState().activeConversationId === message.conversationId){
-                useChatStore.getState().markAsSeen(message.conversationId);
-            }
         })
 
         socket.on("read-message", ({conversation, lastMessage}) => {
@@ -163,7 +175,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
                 _id: conversation._id,
                 lastMessage,
                 lastMessageAt: conversation.lastMessageAt,
-                unreadCounts: conversation.unreadCounts,
+                unreadCounts: normalizeUnreadCounts(conversation.unreadCounts),
                 seenBy: conversation.seenBy
             };
 

@@ -1,6 +1,7 @@
 import Conversation from "../models/Conversation.js"
 import Message from "../models/Message.js"
 import { io } from "../socket/index.js";
+import { toUnreadCountsObject } from "../utils/unreadCounts.js";
 
 export const createConversation = async (req, res) => {
     try {
@@ -87,7 +88,12 @@ export const createConversation = async (req, res) => {
                 joinedAt: p.joinedAt
             }));
 
-            const formatted = {...conversation.toObject(), participants}
+            const conversationObject = conversation.toObject({ flattenMaps: true });
+            const formatted = {
+                ...conversationObject,
+                unreadCounts: toUnreadCountsObject(conversationObject.unreadCounts),
+                participants
+            }
 
             if(type === 'group'){
                 memberIds.forEach((userId) => {
@@ -149,12 +155,14 @@ export const getConversations = async (req, res) => {
             }));
 
             // Trả về conversation mới đã được format
+            const conversationObject = convo.toObject({ flattenMaps: true });
+
             return {
                 // Chuyển mongoose document thành object thường
-                ...convo.toObject(),
+                ...conversationObject,
 
                 // Nếu unreadCounts không có thì trả về object rỗng
-                unreadCounts: convo.unreadCounts || {},
+                unreadCounts: toUnreadCountsObject(conversationObject.unreadCounts),
 
                 // Ghi đè participants bằng danh sách đã format
                 participants,
@@ -285,13 +293,12 @@ export const markAsSeen = async (req, res) => {
             }
         );
 
-        const unreadCounts = updated?.unreadCounts instanceof Map
-            ? Object.fromEntries(updated.unreadCounts)
-            : updated?.unreadCounts;
+        const updatedObject = updated?.toObject({ flattenMaps: true });
+        const unreadCounts = toUnreadCountsObject(updatedObject?.unreadCounts);
 
         io.to(conversationId).emit("read-message", {
             conversation: {
-                ...updated?.toObject(),
+                ...updatedObject,
                 unreadCounts,
             },
             lastMessage: {
@@ -304,9 +311,7 @@ export const markAsSeen = async (req, res) => {
             }
         })
 
-        const myUnreadCount = typeof updated?.unreadCounts?.get === "function"
-            ? updated.unreadCounts.get(userId) || 0
-            : updated?.unreadCounts?.[userId] || 0;
+        const myUnreadCount = unreadCounts[userId] || 0;
 
         return res.status(200).json({
             message: "Marked as seen",

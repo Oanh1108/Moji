@@ -1,3 +1,5 @@
+import { toUnreadCountsObject } from "./unreadCounts.js";
+
 export const updateConversationAfterCreateMessage = 
 (conversation, message, senderId) => {
     conversation.set({
@@ -20,9 +22,7 @@ export const updateConversationAfterCreateMessage =
 }
 
 export const emitNewMessage = (io, conversation, message) => {
-    const unreadCounts = conversation.unreadCounts instanceof Map
-        ? Object.fromEntries(conversation.unreadCounts)
-        : conversation.unreadCounts;
+    const unreadCounts = toUnreadCountsObject(conversation.unreadCounts);
 
     const conversationId = conversation._id.toString();
     const participantIds = (conversation.participants || [])
