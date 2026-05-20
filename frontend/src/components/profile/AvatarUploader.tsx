@@ -2,6 +2,7 @@ import { useUserStore } from '@/stores/useUserStore';
 import React, { useRef } from 'react'
 import { Button } from '../ui/button';
 import { Camera } from 'lucide-react';
+import { toast } from 'sonner';
 
 const AvatarUploader = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -16,11 +17,19 @@ const AvatarUploader = () => {
         if(!file){
             return;
         }
+
+        if(!file.type.startsWith("image/")){
+            toast.error("Chỉ có thể upload file ảnh");
+            e.target.value = "";
+            return;
+        }
+
         const formData = new FormData();
 
         formData.append("file", file);
 
         await updateAvatarUrl(formData);
+        e.target.value = "";
     }
   return (
     <>
@@ -36,6 +45,7 @@ const AvatarUploader = () => {
 
         <input 
             type='file'
+            accept='image/*'
             hidden
             ref={fileInputRef}
             onChange={handleUpload}

@@ -21,7 +21,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import type { User } from "@/types/user"
-import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, UserIcon, Bell } from "lucide-react"
+import { ChevronsUpDownIcon, UserIcon, Bell } from "lucide-react"
 import Logout from "../auth/Logout"
 import { useState } from "react"
 import FriendRequestDialog from "../friendRequest/FriendRequestDialog"
@@ -98,12 +98,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="cursor-pointer"
-              variant="destructive"
-            >
-              <Logout/>
-            </DropdownMenuItem>
+            <Logout/>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

@@ -32,7 +32,7 @@ export const signUp = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-
+ 
         await User.create({
             username,
             hashedPassword,

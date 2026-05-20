@@ -19,7 +19,7 @@ export const authService = {
 
     signIn: async (username: string, password: string) => {
         const res = await api.post(
-            "auth/signin", 
+            "/auth/signin", 
             {username, password}, 
             {withCredentials: true})
         return res.data; //access token mà server gửi lại
@@ -35,7 +35,8 @@ export const authService = {
     },
 
     refresh: async () => {
-        const res = await api.post("/auth/refresh", {withCredentials: true});
+        const res = await api.post("/auth/refresh", 
+            {withCredentials: true});
         return res.data.accessToken;
     }
 }

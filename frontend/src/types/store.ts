@@ -3,6 +3,17 @@ import type { Socket } from "socket.io-client";
 import type { Conversation, Message } from "./chat";
 import type { Friend, FriendRequest, User } from "./user";
 
+export interface ProfileUpdatePayload {
+  displayName: string;
+  bio?: string;
+  phone?: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface AuthState {
     accessToken: string | null;
     user: User | null;
@@ -86,12 +97,12 @@ export interface ChatState {
   sendDirectMessage: (
     recipientId: string,
     content: string,
-    imgUrl?: string
+    image?: File
   ) => Promise<void>
   sendGroupMessage: (
     conversationId: string,
     content: string,
-    imgUrl?: string
+    image?: File
   ) => Promise<void>
 
   //add message
@@ -127,4 +138,6 @@ export interface FriendState {
 
 export interface UserState {
   updateAvatarUrl: (formData: FormData) => Promise<void>;
+  updateProfile: (payload: ProfileUpdatePayload) => Promise<void>;
+  changePassword: (payload: ChangePasswordPayload) => Promise<void>;
 }

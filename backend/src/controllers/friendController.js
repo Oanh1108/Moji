@@ -1,7 +1,7 @@
 import Friend from '../models/Friend.js';
 import User from '../models/User.js';
 import FriendRequest from '../models/FriendRequest.js';
-import Conversation from '../models/Conversastion.js'
+import Conversation from '../models/Conversation.js'
 
 export const sendFriendRequest = async (req, res) => {
     try {

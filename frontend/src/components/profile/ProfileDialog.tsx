@@ -3,6 +3,8 @@ import type { Dispatch, SetStateAction } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import ProfileCard from "./ProfileCard";
 import { useAuthStore } from "@/stores/useAuthStore";
+import ProfileSettingsForm from "./ProfileSettingsForm";
+import ChangePasswordForm from "./ChangePasswordForm";
 
 interface ProfileDialogProps {
     open: boolean;
@@ -15,7 +17,7 @@ const ProfileDialog = ({open, setOpen} : ProfileDialogProps) => {
     <Dialog
     open={open}
     onOpenChange={setOpen}>
-        <DialogContent className='overflow-y-auto p-0 bg-transparent border-0 shadow-2xl'>
+        <DialogContent className='max-h-[calc(100vh-2rem)] overflow-y-auto p-0 bg-transparent border-0 shadow-2xl sm:max-w-2xl'>
             <div className="bg-gradient-glass">
                 <div className="max-w-4xl mx-auto p-4">
                     {/* heading */}
@@ -28,6 +30,14 @@ const ProfileDialog = ({open, setOpen} : ProfileDialogProps) => {
                     <ProfileCard
                         user={user}
                     />
+
+                    <div className="mt-4">
+                        <ProfileSettingsForm user={user} />
+                    </div>
+
+                    <div className="mt-4">
+                        <ChangePasswordForm />
+                    </div>
                 </div>
 
             </div>

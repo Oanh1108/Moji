@@ -1,6 +1,5 @@
 import { useChatStore } from "@/stores/useChatStore"
 import ChatWelcomScreen from "./ChatWelcomScreen";
-import ChatWindowSkeleton from "./ChatWindowSkeleton";
 import { SidebarInset } from "../ui/sidebar";
 import ChatWindowHeader from "./ChatWindowHeader";
 import ChatWindowBody from "./ChatWindowBody";
@@ -11,8 +10,6 @@ const ChatWindowLayout = () => {
   const {
     activeConversationId,
     conversations,
-    messageLoading: loading,
-    messages,
     markAsSeen
   } = useChatStore();
 
@@ -26,7 +23,7 @@ const ChatWindowLayout = () => {
 
       const markSeen = async() => {
         try {
-          await markSeen
+          await markAsSeen(selectedConvo._id)
         } catch (error) {
           console.error("Lỗi khi markSeen", error);
         }
@@ -36,10 +33,6 @@ const ChatWindowLayout = () => {
 
     if(!selectedConvo){
       return <ChatWelcomScreen/>
-    }
-
-    if(loading) {
-      return <ChatWindowSkeleton/>
     }
 
   return (

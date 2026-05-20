@@ -1,4 +1,4 @@
-import Conversation from "../models/Conversastion.js";
+import Conversation from "../models/Conversation.js";
 import Friend from "../models/Friend.js";
 
 // Hàm dùng để sắp xếp 2 giá trị theo thứ tự cố định

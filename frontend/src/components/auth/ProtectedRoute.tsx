@@ -9,10 +9,13 @@ const ProtectedRoute = () => {
     const [starting, setStarting] = useState(true);
 
     useEffect(()=>{
+        //Tạo biến kiểm tra component tồn tại
         let mounted = true;
 
+        //Ktr đăng nhập và lấy dữ liệu ban đầu
         const init = async () => {
             try {
+                //lấy toàn bộ state hiện tại trong auth store
                 const auth = useAuthStore.getState();
 
                 // Có thể xảy ra khi refresh trang
@@ -59,9 +62,7 @@ const ProtectedRoute = () => {
     }
 
   return (
-    <Outlet>
-
-    </Outlet>
+    <Outlet/>
   )
 }
 

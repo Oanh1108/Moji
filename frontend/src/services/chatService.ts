@@ -22,20 +22,36 @@ export const chatService = {
     async sendDirectMessage(
         recipientId: string, 
         content: string = "",
-        imgUrl?: string,
+        image?: File,
         conversationId?: string
     ) {
-        const res = await api.post("/messages/direct", {
-            recipientId, content, imgUrl, conversationId
-        })
+        const formData = new FormData();
+        formData.append("recipientId", recipientId);
+        formData.append("content", content);
+
+        if(conversationId) {
+            formData.append("conversationId", conversationId);
+        }
+
+        if(image) {
+            formData.append("image", image);
+        }
+
+        const res = await api.post("/messages/direct", formData)
 
         return res.data.message;
     },
 
-    async sendGroupMessage(conversationId:string, content:string="", imgUrl?:string){
-        const res = await api.post("/messages/group", {
-            conversationId, content, imgUrl
-        })
+    async sendGroupMessage(conversationId:string, content:string="", image?: File){
+        const formData = new FormData();
+        formData.append("conversationId", conversationId);
+        formData.append("content", content);
+
+        if(image) {
+            formData.append("image", image);
+        }
+
+        const res = await api.post("/messages/group", formData)
         return res.data.message;
     },
 

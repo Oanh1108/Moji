@@ -26,6 +26,7 @@ api.interceptors.response.use((res) => res, async (error) => {
     //những api không cần check
     if(originalResquest.url.includes("/auth/signin") ||
     originalResquest.url.includes("/auth/signup") ||
+      originalResquest.url.includes("/auth/signout") ||
       originalResquest.url.includes("/auth/refresh")
     ) {
         return Promise.reject(error);

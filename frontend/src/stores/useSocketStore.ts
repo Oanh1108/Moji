@@ -15,7 +15,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         const accessToken = useAuthStore.getState().accessToken;
         const existingSocket = get().socket;
 
-        if(existingSocket) return; //tránh tạo nhiều socket
+        if(existingSocket) return;
 
         const socket: Socket = io(baseUrl, {
             auth: {token: accessToken},
@@ -25,18 +25,33 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         set({socket});
 
         socket.on("connect", () => {
-            console.log("Đã kết nối socket")
+            console.log("Da ket noi socket")
         });
 
-        //online users
-        socket.on("online-users", (userIds) => {
+        socket.on("online-users", (userIds: string[]) => {
             set({onlineUsers: userIds})
+        })
+
+        socket.on("user-online", (userId: string) => {
+            set((state) => {
+                if(state.onlineUsers.includes(userId)) {
+                    return state;
+                }
+
+                return {
+                    onlineUsers: [...state.onlineUsers, userId]
+                };
+            })
+        })
+
+        socket.on("user-offline", (userId: string) => {
+            set((state) => ({
+                onlineUsers: state.onlineUsers.filter((id) => id !== userId)
+            }))
         })
 
         socket.on("typing", ({conversationId, userId}) => {
             if(!conversationId || !userId) return;
-
-            console.log("CLIENT nhận typing", {conversationId, userId});
 
             if(typingTimers[conversationId]){
                 clearTimeout(typingTimers[conversationId]);
@@ -59,7 +74,6 @@ export const useSocketStore = create<SocketState>((set, get) => ({
             }, 2000);
         });
 
-        //new message
         socket.on("new-message", ({message, conversation, unreadCounts}) => {
             useChatStore.getState().addMessage(message);
 
@@ -81,14 +95,12 @@ export const useSocketStore = create<SocketState>((set, get) => ({
             }
 
             if(useChatStore.getState().activeConversationId === message.conversationId){
-                //đánh dấu đã đọc
                 useChatStore.getState().markAsSeen();
             }
 
             useChatStore.getState().updateConversation(updateConversation);
         })
 
-        // read message
         socket.on("read-message", ({conversation, lastMessage}) => {
             const updated = {
                 _id: conversation._id,
@@ -101,7 +113,6 @@ export const useSocketStore = create<SocketState>((set, get) => ({
             useChatStore.getState().updateConversation(updated);
         })
 
-        //new group chat
         socket.on('new-group', (conversation) => {
             useChatStore.getState().addConvo(conversation);
             socket.emit('join-conversation', conversation._id);
@@ -118,5 +129,3 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         }
     },
 }))
-
-

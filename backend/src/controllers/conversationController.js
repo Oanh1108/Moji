@@ -1,4 +1,4 @@
-import Conversation from "../models/Conversastion.js"
+import Conversation from "../models/Conversation.js"
 import Message from "../models/Message.js"
 import { io } from "../socket/index.js";
 
@@ -246,7 +246,7 @@ export const getUserConversationsForSocketIO = async (userId) => {
         const conversations = await Conversation.find(
             {"participants.userId": userId},
             {_id: 1}
-        );
+        ).lean();
 
         return conversations.map((c) => c._id.toString())
     } catch (error) {
@@ -318,4 +318,4 @@ export const markAsSeen = async (req, res) => {
         console.error("Lỗi khi mark as seen", error);
         return res.status(500).json({message: "Lỗi hệ thống"})
     }
-}
+}   

@@ -108,10 +108,10 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
-      sendDirectMessage: async(recipientId, content, imgUrl) => {
+      sendDirectMessage: async(recipientId, content, image) => {
         try {
           const {activeConversationId} = get();
-          await chatService.sendDirectMessage(recipientId, content, imgUrl, activeConversationId || undefined);
+          await chatService.sendDirectMessage(recipientId, content, image, activeConversationId || undefined);
 
           set((state) => ({
             conversations: state.conversations.map((c) => c._id === activeConversationId ? {...c, seenBy:[]} : c),
@@ -122,9 +122,9 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
-      sendGroupMessage: async(conversationId, content, imgUrl) => {
+      sendGroupMessage: async(conversationId, content, image) => {
         try {
-          await chatService.sendGroupMessage(conversationId, content, imgUrl);
+          await chatService.sendGroupMessage(conversationId, content, image);
 
           set((state) => ({
             conversations: state.conversations.map((c) => 
@@ -138,7 +138,7 @@ export const useChatStore = create<ChatState>()(
       addMessage: async (message) => {
         try {
           const {user} = useAuthStore.getState();
-          const {fetchMessages} = get();
+          const {fetchMessages, activeConversationId} = get();
 
           message.isOwn = message.senderId === user?._id;
 
@@ -146,22 +146,33 @@ export const useChatStore = create<ChatState>()(
 
           let prevItems = get().messages[convoId]?.items ?? [];
 
+          if(prevItems.length === 0 && activeConversationId !== convoId){
+            return;
+          }
+
           if(prevItems.length === 0){
             await fetchMessages(message.conversationId);
             prevItems = get().messages[convoId]?.items ?? [];
           }
 
           set((state) => {
+            const current = state.messages[convoId] ?? {
+              items: prevItems,
+              hasMore: false,
+              nextCursor: null,
+            };
+
             if(prevItems.some((m) => m._id === message._id)){
               return state;
             }
+
             return {
               messages: {
                 ...state.messages,
                 [convoId]: {
                   items: [...prevItems, message],
-                  hasMore: state.messages[convoId].hasMore,
-                  nextCursor: state.messages[convoId].nextCursor ?? undefined, 
+                  hasMore: current.hasMore,
+                  nextCursor: current.nextCursor ?? undefined, 
                 }
               }
             }

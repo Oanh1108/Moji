@@ -12,22 +12,34 @@ const io = new Server(server, {
     cors: {
         origin: process.env.CLIENT_URL,
         credentials: true
-    }
+    },
+    maxHttpBufferSize: 1024 * 1024,
 });
 
 io.use(socketAuthMiddleware)
 
-const onlineUsers = new Map(); // {userId: socketId}
+const onlineUsers = new Map(); // { userId: Set<socketId> }
+const TYPING_THROTTLE_MS = 700;
 
 io.on("connection", async (socket) => {
     const user = socket.user;
-    console.log(`${user.displayName} online với socket ${socket.id}`)
+    const userId = user._id.toString();
 
-    onlineUsers.set(user._id, socket.id);
+    const userSockets = onlineUsers.get(userId) ?? new Set();
+    const wasOffline = userSockets.size === 0;
 
-    io.emit("online-users", Array.from(onlineUsers.keys()));
+    userSockets.add(socket.id);
+    onlineUsers.set(userId, userSockets);
 
-    const conversationIds = await getUserConversationsForSocketIO(user._id);
+    console.log(`${user.displayName} online voi socket ${socket.id}`)
+
+    socket.emit("online-users", Array.from(onlineUsers.keys()));
+
+    if (wasOffline) {
+        socket.broadcast.emit("user-online", userId);
+    }
+
+    const conversationIds = await getUserConversationsForSocketIO(userId);
     conversationIds.forEach((id) => {
         socket.join(id);
     });
@@ -36,25 +48,37 @@ io.on("connection", async (socket) => {
         socket.join(conversationId); 
     });
 
-    socket.join(user._id.toString());
+    socket.join(userId);
 
     socket.on("typing", ({conversationId}) => {
         if(!conversationId) return;
 
-        console.log("SERVER nhận typing", {
-            conversationId,
-            userId: user._id.toString(),
-        });
+        const now = Date.now();
+        socket.data.typingLastSent ??= new Map();
+
+        const lastSentAt = socket.data.typingLastSent.get(conversationId) ?? 0;
+        if (now - lastSentAt < TYPING_THROTTLE_MS) return;
+
+        socket.data.typingLastSent.set(conversationId, now);
 
         socket.to(conversationId).emit("typing", {
             conversationId,
-            userId: user._id.toString(),
+            userId,
         });
     });
 
     socket.on("disconnect", () => {
-        onlineUsers.delete(user._id);
-        io.emit("online-users", Array.from(onlineUsers.keys()))
+        const sockets = onlineUsers.get(userId);
+
+        if (sockets) {
+            sockets.delete(socket.id);
+
+            if (sockets.size === 0) {
+                onlineUsers.delete(userId);
+                socket.broadcast.emit("user-offline", userId);
+            }
+        }
+
         console.log(`socket disconnected: ${socket.id}`);
     });
 });
