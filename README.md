@@ -169,14 +169,6 @@ npm run lint
 npm run preview
 ```
 
-## Ghi chú triển khai
-
-- Frontend cần trỏ `VITE_API_URL` về URL backend production.
-- Backend cần cấu hình `CLIENT_URL` đúng với URL frontend production.
-- Nếu deploy production dùng cookie cross-site, cần chạy HTTPS và `NODE_ENV=production`.
-- MongoDB cần bật index đầy đủ để các truy vấn chat chạy nhanh.
-- Cloudinary cần cấu hình đúng để upload avatar và ảnh tin nhắn.
-
 ## Tác giả
 
 Moji được phát triển bởi Oanh1108.
