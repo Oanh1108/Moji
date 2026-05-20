@@ -24,14 +24,16 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
 
   // Hàm này chạy khi user click vào card nhóm chat
   const handleSelectConversation = async (id: string) => {
-  setActiveConversation(id)
+    setActiveConversation(id)
 
-  await markAsSeen() 
+    const tasks: Promise<unknown>[] = [markAsSeen(id)];
 
-  if (!messages[id]) {
-    await fetchMessages(id)
+    if (!messages[id]) {
+      tasks.push(fetchMessages(id))
+    }
+
+    await Promise.allSettled(tasks)
   }
-}
 
   return (
     <div>

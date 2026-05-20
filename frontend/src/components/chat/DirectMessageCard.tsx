@@ -25,14 +25,16 @@ const DirectMessageCard = ({convo} : {convo: Conversation}) => {
     const lastMessage = convo.lastMessage?.content ?? "";
 
     const handleSelectConversation = async (id: string) => {
-    setActiveConversation(id);
+        setActiveConversation(id);
 
-    await markAsSeen();
+        const tasks: Promise<unknown>[] = [markAsSeen(id)];
 
-    if(!messages[id]){
-        await fetchMessages(id);
+        if(!messages[id]){
+            tasks.push(fetchMessages(id));
+        }
+
+        await Promise.allSettled(tasks);
     }
-}
 
   return (
       <ChatCard
